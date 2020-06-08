@@ -106,7 +106,7 @@ let check gamma = function
     let print_err e = errored := true in
     let s = optimise (Typecheck.typecheck print_err gamma exp) in
     if !errored then begin (* Note: `!errored` does NOT mean `not errored` >_< *)
-      Format.printf "val res : Typechecking failed: type error of some sort\n%!";
+      Format.printf "val res : <type error>\n%!";
       gamma
     end else begin
       let s = to_dscheme name s in
