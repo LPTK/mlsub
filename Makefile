@@ -3,8 +3,11 @@
 run: main.byte
 	./$^ test
 
-main.byte:
+main.byte: *.ml
 	ocamlbuild -r -cflag -bin-annot -cflag -g -lflag -g -pkg menhirLib -pkg str -use-menhir -yaccflag --explain -yaccflag --table main.byte
+
+main.native: *.ml
+	ocamlbuild -r -cflag -bin-annot -cflag -g -lflag -g -pkg menhirLib -pkg str -use-menhir -yaccflag --explain -yaccflag --table main.native
 
 
 build-js:

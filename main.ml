@@ -100,23 +100,23 @@ let to_dscheme _name s =
   { d_environment = SMap.map remap s.environment; d_expr = remap s.expr }
 
 
-let process file =
-  let print_err e = Types.Reason.print Format.err_formatter e in
-  let check gamma = function
+let check gamma = function
     | `Exp (name, exp) ->
+    let errored = ref false in
+    let print_err e = errored := true in
     let s = optimise (Typecheck.typecheck print_err gamma exp) in
-(*    Format.printf "val %s : %a\n%!" (Symbol.to_string name) (print_typeterm Pos) (decompile_automaton s.Typecheck.expr);
-    Format.printf "val %s : %a\n%!" (Symbol.to_string name) (print_typeterm Pos) (recomp s.Typecheck.expr);*)
-    let s = to_dscheme name s in
-    Format.printf "val %s : %a\n%!" (Symbol.to_string name) (print_typeterm Pos) 
-      (decompile_automaton (Types.clone (fun f -> f (Location.one Location.internal) s.Typecheck.d_expr)));
-    SMap.add name s gamma
+    if !errored then begin (* Note: `!errored` does NOT mean `not errored` >_< *)
+      Format.printf "val res : Typechecking failed: type error of some sort\n%!";
+      gamma
+    end else begin
+      let s = to_dscheme name s in
+      Format.printf "val %s : %a\n%!" (Symbol.to_string name) (print_typeterm Pos) 
+        (decompile_automaton (Types.clone (fun f -> f (Location.one Location.internal) s.Typecheck.d_expr)));
+      SMap.add name s gamma
+    end
     | `Subs (t1,t2) ->
        let s1 = compile_terms (fun f -> f Pos t1)
        and s2 = compile_terms (fun f -> f Pos t2) in
-(*       Format.printf "%a\n%a\n%!"
-         print_automaton s1
-         print_automaton s2;*)
        let d2 = to_dscheme () { environment = SMap.empty; expr = s2 } in
        let sub s1 s2 = 
          Format.printf "[%s] %a <: %a\n%!"
@@ -126,18 +126,32 @@ let process file =
            in
        sub s1 s2;
        gamma
-
-  in
-  try
-    ignore (List.fold_left check gamma0 (Source.parse_modlist (Location.of_file file)))
+       
+let process file =
+  try ignore (List.fold_left check gamma0 (Source.parse_modlist (Location.of_file file)))
   with
   | Failure msg -> Format.printf "Typechecking failed: %s\n%!" msg
   | Match_failure (file, line, col) -> Format.printf "Match failure in typechecker at %s:%d%d\n%!" file line col
 
-;;
+let repl () =
+  Format.set_margin 1000;
+  let module Loc : Location.Locator = struct
+    let pos (p, p') : Location.t = Location.Loc (Location.of_string "<input>", 0, 0)
+  end in
+  let module L = Lexer.Make (Loc) in
+  let module P = Parser.Make (Loc) in
+  let module I = P.MenhirInterpreter in
+  let gamma = ref gamma0 in
+  while true do
+    let buf = Lexing.from_string (input_line stdin) in
+    let exprs = P.modlist L.read buf in
+    List.iter (fun expr ->
+      gamma := check !gamma expr) exprs
+  done
 
-if Array.length Sys.argv = 1 then Printf.fprintf stderr "Usage: %s <input file>\n" Sys.argv.(0) (* repl () *) else
-  Array.iter process (Array.sub Sys.argv 1 (Array.length Sys.argv - 1))
+let () =
+  if Array.length Sys.argv = 1 then repl ()
+  else Array.iter process (Array.sub Sys.argv 1 (Array.length Sys.argv - 1))
 
 (*
 

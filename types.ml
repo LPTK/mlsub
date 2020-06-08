@@ -138,9 +138,9 @@ module Components = struct
        let rec pfield ppf = function
          | [] -> ()
          | [f, x] ->
-            Format.fprintf ppf "%s :@ %a" f (pr pol) x
+            Format.fprintf ppf "%s : %a" f (pr pol) x
          | (f, x) :: xs ->
-            Format.fprintf ppf "%s :@ %a,@ %a" f (pr pol) x pfield xs in
+            Format.fprintf ppf "%s : %a, %a" f (pr pol) x pfield xs in
        Format.fprintf ppf "{%a}" pfield (list_fields o)
     | List (l, a) ->
        Format.fprintf ppf "%a list" (pr pol) a
@@ -220,7 +220,7 @@ module TypeLat : TYPES = struct
     | [], Neg -> Format.fprintf ppf "Top"
     | [], Pos -> Format.fprintf ppf "Bot"
     | t, _ ->
-       let pp_sep ppf () = Format.fprintf ppf "@ %s@ " (match pol with Pos -> "|" | Neg -> "&") in
+       let pp_sep ppf () = Format.fprintf ppf " %s " (match pol with Pos -> "|" | Neg -> "&") in
        Format.pp_print_list ~pp_sep (Components.print pr pol) ppf t
 
   let change_locations l = List.map (Components.change_locations l)
@@ -251,8 +251,8 @@ let string_of_var v = v
 open Format
 
 let printp paren ppf fmt =
-  let openbox ppf = if paren then fprintf ppf "@[(" else fprintf ppf "@[" in
-  let closebox ppf = if paren then fprintf ppf "@])" else fprintf ppf "@]" in
+  let openbox ppf = if paren then fprintf ppf "(" else fprintf ppf "" in
+  let closebox ppf = if paren then fprintf ppf ")" else fprintf ppf "" in
   openbox ppf;
   kfprintf closebox ppf fmt
 
@@ -260,12 +260,12 @@ let printp paren ppf fmt =
 let rec gen_print_typeterm vstr pol ppf = function
   | TVar v -> fprintf ppf "%s" (vstr v)
   | TCons cons ->
-     fprintf ppf "@[%a@]" (TypeLat.print (gen_print_typeterm vstr) pol) cons
+     fprintf ppf "%a" (TypeLat.print (gen_print_typeterm vstr) pol) cons
   | TAdd (t1, t2) -> 
     let op = match pol with Pos -> "|" | Neg -> "&" in
-    fprintf ppf "@[(%a %s@ %a)@]" (gen_print_typeterm vstr pol) t1 op (gen_print_typeterm vstr pol) t2
+    fprintf ppf "(%a %s %a)" (gen_print_typeterm vstr pol) t1 op (gen_print_typeterm vstr pol) t2
   | TRec (v, t) ->
-    fprintf ppf "rec %s = %a" (vstr v) (gen_print_typeterm vstr pol) t
+    fprintf ppf "(rec %s = %a)" (vstr v) (gen_print_typeterm vstr pol) t
 
 let print_typeterm = gen_print_typeterm string_of_var
 
