@@ -16,8 +16,8 @@ type typing =
 let to_dscheme s =
   let states = s.expr :: SMap.fold (fun v s ss -> s :: ss) s.environment [] in
   let remap, dstates = Types.determinise states in
-  let minim = Types.minimise dstates in
-  let remap x = minim (remap x) in 
+  (* let minim = Types.minimise dstates in
+  let remap x = minim (remap x) in  *)
   { d_environment = SMap.map remap s.environment; d_expr = remap s.expr }
 
 let clone_scheme loc s =

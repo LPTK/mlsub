@@ -93,8 +93,8 @@ let to_dscheme _name s =
   Types.print_automaton (Symbol.to_string name) (fun s -> s.Types.State.id) Format.std_formatter 
     (fun f -> f "t" (clone (fun f -> f (remap s.expr))));*)
 
-  let minim = Types.minimise dstates in
-  let remap x = minim (remap x) in 
+  (* let minim = Types.minimise dstates in
+  let remap x = minim (remap x) in  *)
 (*  Types.print_automaton (Symbol.to_string name) (fun s -> s.Types.State.id) Format.std_formatter 
     (fun f -> f "t" (clone (fun f -> f (remap s.expr))));*)
   { d_environment = SMap.map remap s.environment; d_expr = remap s.expr }

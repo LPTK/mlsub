@@ -9,8 +9,53 @@ let error = (mk 1 2).baz
 check a -> a -> a <: a -> b -> (a | b)
 check a -> b -> (a | b) <: a -> a -> a
 check a -> unit <: a -> a
+check a -> a <: a -> unit
+check a -> a <: unit -> unit
 check {foo:{bar:a}} <: {foo:a; bar:b}
 check {foo:a; bar:b} <: {foo:{bar:a}}
 check (rec t = {bar : unit; self: t}) <: {bar: unit}
 check (rec t = {bar : unit; self: t}) <: (rec t = {bar : unit; self: {bar : unit; self : t }})
 check (rec t = {bar : unit; self: {bar : unit; self : t }}) <: (rec t = {bar : unit; self: t})
+
+let res = (let rec x = (fun y -> (y (y x))) in x)
+check (((rec b = ((a | (b -> a)) -> a)) -> a)) <: ((rec b = (((b -> a) | a) -> a)) -> a)
+
+let res = {u = 0; v = {w = {w = 0}}}
+
+let res = (let rec x = {v = {u = {v = {v = x}}}} in x)
+
+let succ = fun x -> x + 1
+let res = succ 0
+
+
+let add = fun x -> fun y -> x + y
+
+
+let id = fun x -> x
+let twice = fun f -> fun x -> f (f x)
+let object1 = { x = 42; y = id }
+let object2 = { x = 17; y = false }
+let pick_an_object = fun b ->
+  if b then object1 else object2
+let rec recursive_monster = fun x ->
+  { thing = x;
+    self = recursive_monster x }
+
+
+let rec produce = fun arg -> { head = arg; tail = produce (succ arg) }
+let rec consume = fun strm -> add strm.head (consume strm.tail)
+
+let codata = produce 42
+let res = consume codata
+
+let rec codata2 = { head = 0; tail = { head = 1; tail = codata2 } }
+let res = consume codata2
+
+let rec produce3 = fun b -> { head = 123; tail = if b then codata else codata2 }
+let res = fun x -> consume (produce3 x)
+
+let consume2 =
+  let rec go = fun strm -> add strm.head (add strm.tail.head (go strm.tail.tail))
+  in fun strm -> add strm.head (go strm.tail)
+let res = consume2 codata2
+
